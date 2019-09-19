@@ -1,20 +1,19 @@
 <template>
   <div id="app">
-    <img alt="Vue logo" src="./assets/logo.png">
-    <HelloWorld msg="Welcome to Your Vue.js + TypeScript App"/>
+    <SelectionWheel :playercount="3" :size="300" :centerbuttonsize="50" :centerbuttonborder="20"/>
   </div>
 </template>
 
 <script lang="ts">
-import Vue from 'vue'
-import HelloWorld from './components/HelloWorld.vue'
+import Vue from "vue";
+import SelectionWheel from "./components/SelectionWheel.vue";
 
 export default Vue.extend({
-  name: 'app',
+  name: "app",
   components: {
-    HelloWorld
+    SelectionWheel
   }
-})
+});
 </script>
 
 <style lang="scss">
