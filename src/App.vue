@@ -8,6 +8,34 @@
       @selection="selection"
     />
     <div>{{selectedSlice}}</div>
+    <!-- <SelectionWheel
+      :playercount="4"
+      :size="300"
+      :centerbuttonsize="50"
+      :centerbuttonborder="20"
+      @selection="selection"
+    />
+    <SelectionWheel
+      :playercount="5"
+      :size="300"
+      :centerbuttonsize="50"
+      :centerbuttonborder="20"
+      @selection="selection"
+    />
+    <SelectionWheel
+      :playercount="6"
+      :size="300"
+      :centerbuttonsize="50"
+      :centerbuttonborder="20"
+      @selection="selection"
+    />
+    <SelectionWheel
+      :playercount="10"
+      :size="600"
+      :centerbuttonsize="10"
+      :centerbuttonborder="50"
+      @selection="selection"
+    />-->
   </div>
 </template>
 
@@ -41,5 +69,6 @@ export default Vue.extend({
   text-align: center;
   color: #2c3e50;
   margin-top: 60px;
+  display: flex;
 }
 </style>

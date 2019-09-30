@@ -1,5 +1,9 @@
 <template>
-  <div id="selection-wheel" class="container" :style="{height:`${size}px`, width: `${size}px`}">
+  <div
+    ref="selectionwheel"
+    class="container"
+    :style="{height:`${size}px`, width: `${size}px`, zIndex: inFront}"
+  >
     <div
       class="pie-container"
       :style="{height:`${outerSize}px`, width: `${outerSize}px`, opacity: outerOpacity}"
@@ -13,8 +17,22 @@
           width: `${outerSize}px`,
           'clip-path':   `polygon(${getSlicePath(index - 1).map(x => `${x[0]}px ${x[1]}px`)})`,
           opacity: outerOpacity,
-          background: selectedSlice === index ? '#654321':'#123456' }"
-      ></div>
+          fontSize: '50px',
+          color: 'red'
+          }"
+      >
+        {{index}}
+        <img
+          :style="{
+            height: `${outerSize / 2}px`,
+            width: `${outerSize / 2}px`,
+            top: `${getImagePosition(index).y}px`,
+            left: `${getImagePosition(index).x}px`
+          }"
+          class="profile-img"
+          src="https://static1.businessinsider.com/image/528d41f76bb3f7d71051e27f/when-hiring-always-ask-yourself-where-can-this-person-go-from-here.jpg"
+        />
+      </div>
     </div>
     <div
       class="center-button"
@@ -33,6 +51,9 @@
 </template>
 
 <script lang='ts'>
+// background: selectedSlice === index ?
+//           'url(https://static1.businessinsider.com/image/528d41f76bb3f7d71051e27f/when-hiring-always-ask-yourself-where-can-this-person-go-from-here.jpg)':
+//           '#123456'
 import Vue from "vue";
 import {
   pi,
@@ -55,7 +76,9 @@ export default Vue.extend({
       innerBorder: this.centerbuttonborder,
       dragging: false,
       selectedSlice: -1,
-      coordinateCenter: 0
+      coordinateCenter: 0,
+      inFront: 0,
+      radius: this.size / 2
     };
   },
   props: {
@@ -65,8 +88,25 @@ export default Vue.extend({
     centerbuttonborder: Number
   },
   methods: {
+    getImagePosition(sliceIndex: number, show: number): Point {
+      let angles: Angle[] = this.getSliceAngles(sliceIndex);
+
+      console.log(angles);
+
+      let centerAngle: Angle = angles[1];
+
+      let point: Point = getPointForAngle(centerAngle, this.radius / 2);
+
+      let relX = point.x + this.radius;
+      // let relY = point.y >= 0 ? this.radius - point.y : this.radius - point.y;
+      let relY = this.radius - point.y;
+      // console.log(centerAngle);
+      // console.log("slice " + sliceIndex + ": " + point.x + " " + point.y);
+
+      return new Point(relX, relY);
+    },
     toComponentCoordinates(x: number, y: number): any {
-      let component = document.getElementById("selection-wheel");
+      let component = this.$refs.selectionwheel as HTMLElement;
 
       if (component) {
         let position = component.getBoundingClientRect();
@@ -81,25 +121,20 @@ export default Vue.extend({
       }
     },
     getSlicePath(sliceIndex: number): number[][] {
-      let radius: number = this.size / 2;
-      let origin: number[] = [radius, radius];
+      let origin: number[] = [this.radius, this.radius];
 
-      let firstAngle: Angle = new Angle(
-        sliceIndex * ((2 * pi) / this.playerCount)
-      );
+      let angles: Angle[] = this.getSliceAngles(sliceIndex);
 
-      let secondAngle: Angle = new Angle(
-        (sliceIndex + 1) * ((2 * pi) / this.playerCount)
-      );
+      let firstAngle: Angle = angles[0];
+      let centerAngle: Angle = angles[1];
+      let secondAngle: Angle = angles[2];
 
-      let centerAngle: Angle = new Angle(firstAngle.add(secondAngle).rad / 2);
-
-      let firstPoint: Point = getPointForAngle(firstAngle, radius);
-      let secondPoint: Point = getPointForAngle(secondAngle, radius);
+      let firstPoint: Point = getPointForAngle(firstAngle, this.radius);
+      let secondPoint: Point = getPointForAngle(secondAngle, this.radius);
       let centerPoint: Point = getPointForAngle(
         centerAngle,
-        radius * 2,
-        radius
+        this.radius * 2,
+        this.radius
       );
 
       let target: number[] = [firstPoint.x, firstPoint.y];
@@ -108,9 +143,23 @@ export default Vue.extend({
 
       return [origin, target, center, nextTarget];
     },
+    getSliceAngles(sliceIndex: number): Angle[] {
+      let firstAngle: Angle = new Angle(
+        sliceIndex * ((2 * pi) / this.playerCount)
+      );
+
+      let secondAngle: Angle = new Angle(
+        (sliceIndex + 1) * ((2 * pi) / this.playerCount) - pi / 32
+      );
+
+      let centerAngle: Angle = new Angle(firstAngle.add(secondAngle).rad / 2);
+
+      return [firstAngle, centerAngle, secondAngle];
+    },
     expandWheel(): void {
       this.outerSize = this.size;
       this.outerOpacity = 1;
+      this.inFront = 1;
     },
     hideWheel(): void {
       this.dragging = false;
@@ -118,28 +167,20 @@ export default Vue.extend({
       this.selectedSlice = -1;
       this.outerSize = 0;
       this.outerOpacity = 0;
+      this.inFront = 0;
     },
     processDragging(e: any): void {
       this.dragging = true;
 
       let coordinates = this.toComponentCoordinates(e.x, e.y);
 
+      console.log(getAngleForPoint(coordinates));
+
       this.selectedSlice = this.getSelectedSlice(coordinates.x, coordinates.y);
     },
     getSelectedSlice(x: number, y: number): number {
       let angle: Angle = getAngleForPoint(new Point(x, -y));
       let anglePerSlice: Angle = new Angle((2 * pi) / this.playercount);
-
-      console.log(new Point(x, -y));
-      console.log(angle);
-      console.log(
-        angle.deg +
-          " / " +
-          anglePerSlice.deg +
-          " = " +
-          angle.deg / anglePerSlice.deg
-      );
-      console.log(" ");
 
       return Math.ceil(angle.deg / anglePerSlice.deg);
     }
@@ -149,9 +190,7 @@ export default Vue.extend({
 
 <style scoped lang="scss">
 .container {
-  border-radius: 100%;
   position: relative;
-  overflow: hidden;
 
   display: flex;
   align-content: center;
@@ -169,11 +208,18 @@ export default Vue.extend({
   align-content: center;
   align-items: center;
   justify-content: center;
+
+  position: fixed;
+  border-radius: 100%;
+  overflow: hidden;
 }
 
 .slice {
   position: absolute;
   transition: all 0.1s;
+  object-fit: fill;
+  background-color: #123456;
+  /* background-image: url("https://static1.businessinsider.com/image/528d41f76bb3f7d71051e27f/when-hiring-always-ask-yourself-where-can-this-person-go-from-here.jpg"); */
 }
 
 .center-button {
@@ -181,5 +227,9 @@ export default Vue.extend({
   background: rgb(122, 6, 6);
   border-radius: 100%;
   touch-action: none;
+}
+
+.profile-img {
+  position: absolute;
 }
 </style>
